@@ -1,0 +1,95 @@
+﻿@page "/"
+
+@code {
+    // Config settings.
+    private static int numberOfRows = 50;
+    private static int numberOfColumns = 50;
+    private static int incrementValue = 1;
+
+    private Grid grid = new Grid(numberOfRows, numberOfColumns);
+
+    // Starts the logic when a tile(cell) has been clicked on.
+    private void IncrementTileValues(int row, int column)
+    {
+        IncrementRowAndColumn(row, column);
+        CheckForFibonacciSequence();
+    }
+
+    /// <summary>
+    /// Does the regalur non-Fibonacci incrementing.
+    /// </summary>
+    /// <param name="row">Row of the <see cref="Tile"> that has been clicked on.</param>
+    /// <param name="column">Column of the <see cref="Tile"> that has been clicked on.</param>
+    private void IncrementRowAndColumn(int row, int column)
+    {
+        int lastColumnIndex = grid.Tiles.GetUpperBound(0);
+        int lastRowIndex = grid.Tiles.GetUpperBound(1);
+
+        // Increment the entire given row.
+        for (int x = 0; x <= lastColumnIndex; x++)
+        {
+            var tile = grid.Tiles[row, x];
+            tile.Value += incrementValue;
+            tile.IsFibonacciNumber = FibonacciService.IsFibonacciNumber(tile.Value);
+            tile.CssClass = SetCssClass(tile.CssClass);
+        }
+
+        // Increment the given column in all the other rows.
+        for (int y = 0; y <= lastRowIndex; y++)
+        {
+            // The column in this row was already incremented.
+            if (y == row)
+                continue;
+
+            var tile = grid.Tiles[y, column];
+            tile.Value += incrementValue;
+            tile.IsFibonacciNumber = FibonacciService.IsFibonacciNumber(tile.Value);
+            tile.CssClass = SetCssClass(tile.CssClass);
+        }
+    }
+
+    // Gets and sets the Fibonacci sequences in the grid.
+    private void CheckForFibonacciSequence()
+    {
+        var sequenceCoordinates = FibonacciService.GetFibonacciSequenceRecords(grid.Tiles);
+
+        // Update the grid with the coordinates.
+        foreach (var record in sequenceCoordinates)
+        {
+            var tile = grid.Tiles[record.Item1, record.Item2];
+            tile.Value = 0;
+            tile.IsFibonacciNumber = false;
+            tile.CssClass = SetCssClass(tile.CssClass, true);
+        }
+    }
+
+    // Sets the css class for the color animations.
+    private string SetCssClass(string tileCssClass, bool inFibonacciSequence = false)
+    {
+        string newCssClass = string.Empty;
+
+        if (inFibonacciSequence)
+            newCssClass = "fibonacci";
+        else if (String.IsNullOrEmpty(tileCssClass) || tileCssClass.Equals("incrementedB"))
+            newCssClass = "incrementedA";
+        else
+            newCssClass = "incrementedB";
+
+        return newCssClass;
+    }
+}
+
+<div class="container-fluid">
+    @for (int y = 0; y < numberOfRows; y++)
+    {
+        <div class="row" id=@y.ToString()>
+            @for (int x = 0; x < numberOfColumns; x++)
+            {
+                var tile = grid.Tiles[y, x];
+                <div class="col tile @tile.CssClass" id=@x.ToString() @onclick="@(() => IncrementTileValues(tile.RowY, tile.ColumnX))">
+                    @tile.ToString()
+                </div>
+            }
+        </div>
+    }
+</div>
